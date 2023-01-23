@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: customer
+  datasource:
+    driver-class-name: org.h2.Driver
+    password:
+    username: sa
+    url: jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE
+    jdbc-url: ${spring.datasource.url}
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    database: H2
+    hibernate:
+      ddl-auto: create
+    properties:
+      jdbc:
+        lob:
+          non_contextual_creation: true
+    open-in-view: false
+hibernate:
+  dialect: org.hibernate.dialect.H2Dialect
+reporting:
+  process-id: Process_01mvy22
+  process-version: 1.0
+  start-element-id: Event_01mvy22
+  error-element-id: Error_01mvy22
+  server: "127.0.0.1"

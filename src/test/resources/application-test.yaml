@@ -1,0 +1,13 @@
+git:
+  build:
+    time: buildTime
+    version: buildVersion
+  commit:
+    id:
+      full: fullCommitId
+reporting:
+  process-id: Process_01mvy22
+  process-version: 1.0
+  start-element-id: Event_01mvy22
+  error-element-id: Error_01mvy22
+  server: "127.0.0.1"

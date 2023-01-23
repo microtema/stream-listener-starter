@@ -1,0 +1,197 @@
+############## Created by de.microtema:github-workflow-maven-plugin ############
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# Files under .github/workflows folder are generated and should not be edited. #
+################################################################################
+name: 'Execution Lock Spring Boot Stater Library'
+on:
+  push:
+    branches:
+      - develop
+env:
+  APP_NAME: "execution-lock-starter"
+  APP_DISPLAY_NAME: "Execution Lock Spring Boot Stater Library"
+  GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+  JAVA_VERSION: "1.8"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true\
+    \ -DdeployAtEnd=true"
+  CODE_PATHS: "*"
+  VERSION: "2.0.0"
+jobs:
+  initialize:
+    name: Initialize
+    runs-on: [ ubuntu-latest ]
+    outputs:
+      code-changed: ${{ steps.code-changed.outputs.changed }}
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 100
+      - uses: marceloprado/has-changed-path@v1
+        id: code-changed
+        with:
+          paths: ${{ env.CODE_PATHS }}
+  versioning:
+    name: Versioning
+    runs-on: [ ubuntu-latest ]
+    needs: [ initialize ]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+      - name: 'Java: Setup'
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'adopt'
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+        with:
+          maven-version: 3.8.2
+      - name: 'Maven: versions:set'
+        run: |
+          mvn release:update-versions -DdevelopmentVersion=0.0.1-SNAPSHOT $MAVEN_CLI_OPTS
+          mvn versions:set -DnewVersion=$VERSION $MAVEN_CLI_OPTS
+      - name: 'Artifact: prepare'
+        run: |
+          mkdir -p artifact
+          cp pom.xml artifact/pom.xml
+      - name: 'Artifact: upload'
+        uses: actions/upload-artifact@v2
+        with:
+          name: pom-artifact
+          path: artifact/pom.xml
+  compile:
+    name: Compile
+    runs-on: [ ubuntu-latest ]
+    needs: [ versioning ]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+      - name: 'Java: Setup'
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'adopt'
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+        with:
+          maven-version: 3.8.2
+      - name: 'Artifact: download'
+        if: 'false'
+        uses: actions/download-artifact@v2
+        with:
+          name: pom-artifact
+      - name: 'Maven: versions:set'
+        run: |
+          mvn release:update-versions -DdevelopmentVersion=0.0.1-SNAPSHOT $MAVEN_CLI_OPTS
+          mvn versions:set -DnewVersion=$VERSION $MAVEN_CLI_OPTS
+      - name: 'Maven: compile'
+        run: mvn compile $MAVEN_CLI_OPTS
+  security-check:
+    name: Security Check
+    runs-on: [ ubuntu-latest ]
+    needs: [ compile ]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+      - name: 'Java: Setup'
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'adopt'
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+        with:
+          maven-version: 3.8.2
+      - name: 'Maven: dependency-check'
+        run: mvn dependency-check:help -P security -Ddownloader.quick.query.timestamp=false $MAVEN_CLI_OPTS
+  unit-test:
+    name: Unit Test
+    runs-on: [ ubuntu-latest ]
+    needs: [ compile ]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+      - name: 'Java: Setup'
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'adopt'
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+        with:
+          maven-version: 3.8.2
+      - name: 'Artifact: download'
+        if: 'false'
+        uses: actions/download-artifact@v2
+        with:
+          name: pom-artifact
+      - name: 'Maven: versions:set'
+        run: |
+          mvn release:update-versions -DdevelopmentVersion=0.0.1-SNAPSHOT $MAVEN_CLI_OPTS
+          mvn versions:set -DnewVersion=$VERSION $MAVEN_CLI_OPTS
+      - name: 'Maven: test'
+        run: mvn test $MAVEN_CLI_OPTS
+      - name: 'Artifact: prepare'
+        run: |
+          mkdir -p artifact/target/surefire-reports
+          cp -r target/surefire-reports/* artifact/target/surefire-reports/
+          cp -r target/jacoco.exec artifact/target/surefire-reports/
+      - name: 'Test result'
+        uses: actions/upload-artifact@v2
+        with:
+          name: target-artifact
+          path: artifact
+  build:
+    name: Build
+    runs-on: [ ubuntu-latest ]
+    needs: [ unit-test ]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+      - name: 'Java: Setup'
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'adopt'
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+        with:
+          maven-version: 3.8.2
+      - name: 'Maven: versions:set'
+        run: |
+          mvn release:update-versions -DdevelopmentVersion=0.0.1-SNAPSHOT $MAVEN_CLI_OPTS
+          mvn versions:set -DnewVersion=$VERSION $MAVEN_CLI_OPTS
+      - name: 'Maven: package'
+        run: mvn package -P prod -Dcode.coverage=0.00 -DskipTests=true $MAVEN_CLI_OPTS
+      - name: 'Artifact: prepare'
+        run: |
+          mkdir -p artifact/target
+          cp target/*.jar artifact/target/
+      - name: 'Artifact: upload'
+        uses: actions/upload-artifact@v2
+        with:
+          name: target-artifact
+          path: artifact
+  publish:
+    name: Publish
+    runs-on: [ ubuntu-latest ]
+    needs: [ build ]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+      - name: 'Java: Setup'
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'adopt'
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4
+        with:
+          maven-version: 3.8.2
+      - name: 'Maven: versions:set'
+        run: |
+          mvn release:update-versions -DdevelopmentVersion=0.0.1-SNAPSHOT $MAVEN_CLI_OPTS
+          mvn versions:set -DnewVersion=$VERSION $MAVEN_CLI_OPTS
+      - name: 'Maven: deploy'
+        run: mvn deploy -Dcode.coverage=0.0 -DskipTests=true $MAVEN_CLI_OPTS
