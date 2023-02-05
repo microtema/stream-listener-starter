@@ -20,8 +20,6 @@ public class StreamEventPublisher {
 
     private final LogAccessor log = new LogAccessor(LogFactory.getLog(getClass()));
 
-    private static final long DELAY = TimeUnit.SECONDS.toMillis(1);
-
     private final Set<String> endpointIds = Collections.synchronizedSet(new HashSet<>());
     private final Set<StreamListenerEndpoint> endpoints = Collections.synchronizedSet(new HashSet<>());
 
@@ -37,7 +35,7 @@ public class StreamEventPublisher {
 
     public void registerStreamListenerEndpoint(StreamListenerEndpoint endpoint) {
 
-        log.info(() -> String.format("Endpoint [%s] for topic [%s] successfully registered", endpoint.getId(), endpoint.getTopic()));
+        log.info(() -> String.format("Endpoint [%s][%s] for topic [%s] within concurrency [%s] successfully registered", endpoint.getGroupId(), endpoint.getId(), endpoint.getTopic(), endpoint.isConcurrency()));
 
         endpoints.add(endpoint);
     }
@@ -67,10 +65,11 @@ public class StreamEventPublisher {
 
         var listenerId = endpoint.getId();
         var autoStartup = endpoint.isAutoStartup();
+        var delay = endpoint.getDelay();
 
         if (!endpointIds.add(listenerId)) {
 
-            log.warn(() -> "RACE CONDITION DETECTED on [" + endpoint.getId() + "]");
+            log.warn(() -> String.format("RACE CONDITION DETECTED on [%s][%s] endpoint", endpoint.getGroupId(), endpoint.getId()));
 
             return;
         }
@@ -89,23 +88,34 @@ public class StreamEventPublisher {
 
         if (autoStartup) {
 
-            log.trace(() -> "Call next task on [" + endpoint.getId() + "]");
+            log.trace(() -> String.format("Call next task on [%s][%s] endpoint", endpoint.getGroupId(), endpoint.getId()));
 
-            // Small delay, due to other threads
-            try {
-                Thread.sleep(DELAY);
-            } catch (InterruptedException e) {
-                log.warn(() -> "Interrupted Exception during the thread sleep! Message: " + e.getMessage());
-
-                throw new IllegalStateException("Interrupted Exception during the thread sleep!", e);
-            }
+            // Small delay, due to other threads/systems
+            sleepTill(delay);
 
             publishEvent(endpoint);
         } else {
 
-            log.trace(() -> "Reschedule next async task on [" + endpoint.getId() + "]");
+            log.trace(() -> String.format("Reschedule next async task on [%s][%s] endpoint", endpoint.getGroupId(), endpoint.getId()));
 
-            scheduledExecutorService.schedule(() -> publishEvent(endpoint), DELAY, TimeUnit.MILLISECONDS);
+            scheduledExecutorService.schedule(() -> publishEvent(endpoint), delay, TimeUnit.MILLISECONDS);
         }
+    }
+
+    private void sleepTill(long delayInMillis) {
+
+        if (delayInMillis < 1) {
+            return;
+        }
+
+        try {
+            Thread.sleep(delayInMillis);
+        } catch (InterruptedException e) {
+
+            log.warn(() -> "Interrupted Exception during the thread sleep! Message: " + e.getMessage());
+
+            Thread.currentThread().interrupt();
+        }
+
     }
 }

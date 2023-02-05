@@ -109,7 +109,7 @@ Feedback and pull-requests welcome!
 
 ## Technology Stack
 
-* Java 1.8
+* Java 17
     * Streams
     * Lambdas
 * Third Party Libraries

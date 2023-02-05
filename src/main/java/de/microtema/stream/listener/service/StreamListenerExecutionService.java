@@ -43,12 +43,12 @@ public class StreamListenerExecutionService<T extends EventIdAware> {
 
         if (CollectionUtils.isEmpty(records)) {
 
-            log.trace(() -> "Skip invocation of [" + endpoint.getId() + "] due to empty records");
+            log.trace(() -> String.format("Skip invocation of [%s][%s] endpoint due to empty records", endpoint.getGroupId(), endpoint.getId()));
 
             return false;
         }
 
-        log.trace(() -> "Received ({}) record(s) for [" + endpoint.getId() + "]");
+        log.trace(() -> String.format("Received ({}) record(s) for [%s][%s] endpoint", endpoint.getGroupId(), endpoint.getId()));
 
         executeImpl(endpoint, records);
 
@@ -67,6 +67,10 @@ public class StreamListenerExecutionService<T extends EventIdAware> {
         if (batch) {
 
             responses = executeEndpoint(endpoint, records);
+        } else if (endpoint.isConcurrency()) {
+
+            responses = records.stream().parallel().map(it -> executeEndpoint(endpoint, it)).collect(Collectors.toList());
+
         } else {
 
             responses = records.stream().map(it -> executeEndpoint(endpoint, it)).collect(Collectors.toList());
@@ -74,7 +78,7 @@ public class StreamListenerExecutionService<T extends EventIdAware> {
 
         var durationFormat = getDuration(startMillis);
 
-       // log.info(() -> String.format("Invocation of [%s] within (%s) record(s) completed. Duration [%s]", endpointId, records.size(), durationFormat));
+        log.info(() -> String.format("Invocation of [%s][%s] endpoint within (%s) record(s) completed. Duration [%s]", endpoint.getGroupId(), endpointId, records.size(), durationFormat));
 
         dataProvider.commit(endpoint, responses);
     }

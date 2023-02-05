@@ -27,6 +27,7 @@ public @interface StreamListener {
 
     /**
      * Intended to be used when no other attributes are needed, for example: @StreamListener("topicBeanName").
+     *
      * @return the topic names or expressions (SpEL) to listen to.
      */
     @AliasFor("topics")
@@ -81,6 +82,14 @@ public @interface StreamListener {
      * @return the concurrency.
      */
     String concurrency() default "";
+
+    /**
+     * delay – the time from now to delay execution
+     * <p>SpEL {@code #{...}} and property place holders {@code ${...}} are supported.
+     *
+     * @return the delay.
+     */
+    String delay() default "";
 
     /**
      * Set to true or false, to override the default setting in the container factory. May

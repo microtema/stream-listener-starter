@@ -21,6 +21,11 @@ public class StreamListenerEndpoint<T extends EventIdAware> {
     private String cron = "0 */1 * ? * *";
     private boolean autoStartup;
     private boolean concurrency;
+
+    /**
+     * delay – the time from now to delay execution
+     */
+    private long delay = 0;
     private Object[] methodParameters;
     private Class<T> recordType;
     private Properties consumerProperties;
@@ -163,5 +168,13 @@ public class StreamListenerEndpoint<T extends EventIdAware> {
 
     public void setDataProvider(StreamListenerDataProvider<T> dataProvider) {
         this.dataProvider = dataProvider;
+    }
+
+    public long getDelay() {
+        return delay;
+    }
+
+    public void setDelay(long delay) {
+        this.delay = delay;
     }
 }

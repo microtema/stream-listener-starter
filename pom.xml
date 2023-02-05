@@ -5,7 +5,7 @@
 
     <groupId>de.microtema</groupId>
     <artifactId>stream-listener-starter</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.2</version>
     <packaging>jar</packaging>
 
     <name>Stream Listener Spring Boot Stater Library</name>

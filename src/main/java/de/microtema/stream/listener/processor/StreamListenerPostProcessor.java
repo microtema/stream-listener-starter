@@ -8,6 +8,7 @@ import de.microtema.stream.listener.model.EventIdAware;
 import de.microtema.stream.listener.model.StreamListenerEndpoint;
 import de.microtema.stream.listener.provider.service.StreamListenerDataProvider;
 import de.microtema.stream.listener.publisher.StreamEventPublisher;
+import org.apache.commons.lang3.Conversion;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
@@ -26,15 +27,11 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class StreamListenerPostProcessor implements DestructionAwareBeanPostProcessor, ApplicationContextAware {
 
     private final LogAccessor log = new LogAccessor(LogFactory.getLog(getClass()));
 
-    private static final String APP_ID = Optional.ofNullable(System.getenv("HOSTNAME")).orElseGet(() -> UUID.randomUUID().toString());
-
-    private final AtomicInteger counter;
     private final ListenerScope listenerScope;
     private final StreamEventPublisher streamEventPublisher;
 
@@ -44,7 +41,6 @@ public class StreamListenerPostProcessor implements DestructionAwareBeanPostProc
 
     public StreamListenerPostProcessor(StreamEventPublisher streamEventPublisher) {
         this.streamEventPublisher = streamEventPublisher;
-        counter = new AtomicInteger();
         listenerScope = new ListenerScope();
         beanExpressionResolver = new StandardBeanExpressionResolver();
     }
@@ -103,7 +99,7 @@ public class StreamListenerPostProcessor implements DestructionAwareBeanPostProc
         endpoint.setGroupId(getEndpointGroupId(streamListener, endpoint.getId()));
 
         // NOTE: We support only one topic per consumer.
-        endpoint.setTopic(streamListener.topics()[0]);
+        endpoint.setTopic(getEndpointTopic(streamListener));
 
         endpoint.setErrorHandler(resolveErrorHandler(streamListener));
         endpoint.setRecordFilterStrategy(resolveRecordFilterStrategy(streamListener));
@@ -113,6 +109,8 @@ public class StreamListenerPostProcessor implements DestructionAwareBeanPostProc
 
         endpoint.setBatch(isBatchConsumer(method, streamListener));
         endpoint.setAutoStartup(isAutoStartup(streamListener));
+        endpoint.setConcurrency(isConcurrency(streamListener));
+        endpoint.setDelay(getDelay(streamListener));
         endpoint.setMethodParameters(resolveMethodParameters(method));
         endpoint.setRecordType(resolveRecordTypeReference(method));
 
@@ -158,26 +156,43 @@ public class StreamListenerPostProcessor implements DestructionAwareBeanPostProc
             return Boolean.parseBoolean(autoStartup);
         }
 
-        return false;
+        var autoStartup = resolveExpressionAsString("${stream-listener.auto-startup}", "stream-listener.auto-startup");
+
+        return Boolean.parseBoolean(autoStartup);
     }
 
-    private String getEndpointGroupId(StreamListener streamListener, String id) {
+    private boolean isConcurrency(StreamListener streamListener) {
 
-        String groupId = null;
+        if (StringUtils.hasText(streamListener.concurrency())) {
 
-        if (StringUtils.hasText(streamListener.groupId())) {
-            groupId = resolveExpressionAsString(streamListener.groupId(), "groupId");
+            var concurrency = resolveExpressionAsString(streamListener.concurrency(), "concurrency");
+
+            return Boolean.parseBoolean(concurrency);
         }
 
-        if (groupId == null && streamListener.idIsGroup() && StringUtils.hasText(streamListener.id())) {
-            groupId = id;
+        var concurrency = resolveExpressionAsString("${stream-listener.concurrency}", "stream-listener.concurrency");
+
+        return Boolean.parseBoolean(concurrency);
+    }
+
+    private long getDelay(StreamListener streamListener) {
+
+        if (StringUtils.hasText(streamListener.delay())) {
+
+            var delay = resolveExpressionAsString(streamListener.delay(), "delay");
+
+            if (StringUtils.hasText(delay)) {
+                return Long.parseLong(delay);
+            }
         }
 
-        if (groupId == null) {
-            groupId = resolveExpressionAsString("${spring.application.name}", "spring.application.name");
+        var delay = resolveExpressionAsString("${stream-listener.delay}", "stream-listener.delay");
+
+        if (!StringUtils.hasText(delay)) {
+            return 250L;
         }
 
-        return groupId;
+        return Long.parseLong(delay);
     }
 
     private Properties resolveStreamProperties(String[] propertyStrings) {
@@ -223,14 +238,101 @@ public class StreamListenerPostProcessor implements DestructionAwareBeanPostProc
 
     private String getEndpointId(StreamListener kafkaListener, String beanName) {
 
-        var id = kafkaListener.id();
+        String endpointId = null;
 
-        if (StringUtils.hasText(id)) {
+        if (StringUtils.hasText(kafkaListener.id())) {
 
-            return resolveExpressionAsString(id, "id");
+            endpointId = resolveExpressionAsString(kafkaListener.id(), "id");
         }
 
-        return APP_ID + "_" + beanName + "_" + counter.getAndIncrement();
+        if (StringUtils.hasText(endpointId)) {
+
+            return endpointId;
+        }
+
+        endpointId = resolveExpressionAsString("${stream-listener.id}", "stream-listener.id");
+
+        if (!StringUtils.hasText(endpointId)) {
+
+            endpointId = beanName;
+        }
+
+
+        return endpointId + "_" + generateHash();
+    }
+
+    private String getEndpointGroupId(StreamListener streamListener, String id) {
+
+        String groupId = null;
+
+        if (StringUtils.hasText(streamListener.groupId())) {
+            groupId = resolveExpressionAsString(streamListener.groupId(), "groupId");
+        }
+
+        if (StringUtils.hasText(groupId)) {
+
+            return groupId;
+        }
+
+        groupId = resolveExpressionAsString("${stream-listener.group-id}", "stream-listener.group-id");
+
+        if (StringUtils.hasText(groupId)) {
+
+            return groupId;
+        }
+
+        groupId = System.getenv("HOSTNAME");
+
+        if (StringUtils.hasText(groupId)) {
+
+            return groupId;
+        }
+
+        if (streamListener.idIsGroup()) {
+            return id;
+        }
+
+        return resolveExpressionAsString("${spring.application.name}", "spring.application.name");
+    }
+
+
+    private String getEndpointTopic(StreamListener streamListener) {
+
+        var topics = streamListener.topics();
+
+        String topic = null;
+
+        if (topics.length > 0) {
+            topic = topics[0];
+        }
+
+        if (StringUtils.hasText(topic)) {
+
+            topic = resolveExpressionAsString(topic, "topics");
+        }
+
+        if (StringUtils.hasText(topic)) {
+
+            return topic;
+        }
+
+        topic = resolveExpressionAsString("${stream-listener.topics}", "stream-listener.topics");
+
+        if (StringUtils.hasText(topic)) {
+
+            return topic;
+        }
+
+        return topics[0];
+    }
+
+    private static String generateHash() {
+
+        var bytes = Conversion.uuidToByteArray(UUID.randomUUID(), new byte[16], 0, 16);
+
+        var uuid = Conversion.byteArrayToUuid(bytes, 0);
+
+        return uuid.toString().substring(0, 7);
     }
 
     private <T extends EventIdAware> StreamEventListenerErrorHandler<T> resolveErrorHandler(StreamListener streamListener) {
@@ -332,12 +434,18 @@ public class StreamListenerPostProcessor implements DestructionAwareBeanPostProc
 
         var resolved = resolveExpression(value);
 
-        if (resolved instanceof String val) {
-            return val;
-        }
-
         if (Objects.isNull(resolved)) {
             return null;
+        }
+
+        if (resolved instanceof String val) {
+
+            if (val.trim().startsWith("${")) {
+
+                return null;
+            }
+
+            return val;
         }
 
         throw new IllegalStateException("[" + attribute + "] must resolve to a String. Resolved to [" + resolved.getClass() + "] for [" + value + "]");
