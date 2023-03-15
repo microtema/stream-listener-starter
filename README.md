@@ -63,6 +63,35 @@ we'll define the BeanPostProcessor which will check each bean for the Subscriber
 * The annotated method must expect arguments of typo single record or collection of records.
 * It will typically have a void return type; if not, the returned value will be ignored when called through the factory.
 
+```
+public class InvoiceListener {    
+     
+    @StreamListener("dwh_invoice_created")
+    public void on(InvouceEvent event) { 
+        ---
+    }
+}
+```
+
+application.properties
+```
+stream-listener.name=dwh
+stream-listener.id=invoice-consumer_1
+stream-listener.batch=true
+```
+
+##### Configuration
+| Name | Type | Required | Default Value | Description |
+| --- | --- | --- | --- | --- |
+| topics |	array<string> |	true |	empty | The topics for this listener. The entries can be 'topic name', 'property-placeholder keys' or 'expressions'. An expression must be resolved to the topic name. |
+| id | string | false | empty | The unique identifier of the container for this listener. If none is specified an auto-generated id is used SpEL {@code #{...}} and property place holders {@code ${...}} are supported. |
+| name | string	|false|	empty |Spring application name topics	array<string>	true	empty The topics for this listener. The entries can be 'topic name', 'property-placeholder keys' or 'expressions'. An expression must be resolved to the topic name. |
+| errorHandler	| object | false	| null | Set an {@link StreamEventListenerErrorHandler} bean name to invoke if the listener method throws an exception. If a SpEL expression is provided ({@code #{...}}), the expression can either evaluate to a {StreamEventListenerErrorHandler} instance or a bean name. |
+| groupId |	string | false | empty | Override the {@code group.id} property for the consumer factory with this value for this listener only. SpEL {@code #{...}} and property place holders {@code ${...}} are supported. concurrency	string	false	empty	Override the container factory's {@code concurrency} setting for this listener. May be a property placeholder or SpEL expression that evaluates to a {@link Number}, in which case {@link Number#intValue()} is used to obtain the value. SpEL {@code #{...}} and property place holders {@code ${...}} are supported. autoStartup	boolean	false false	Set to true or false, to override the default setting in the container factory. May be a property placeholder or SpEL expression that evaluates to a {@link Boolean} or a {@link String}, in which case the {@link Boolean#parseBoolean(String)} is used to obtain the value. SpEL {@code #{...}} and property place holders {@code ${...}} are supported. |
+| properties |	array<string>|	false|	empty | Stream consumer properties; they will supersede any properties with the same name defined in the consumer factory (if the consumer factory supports property overrides). Supported Syntax The supported syntax for key-value pairs is the same as the syntax defined for entries in a Java {@linkplain java.util.Properties#load(java.io.Reader) properties file}: {@code key=value} {@code key:value}  {@code key value} {@code group.id} and {@code client.id} are ignored. SpEL {@code #{...}} and property place holders {@code ${...}} are supported. SpEL expressions must resolve to a {@link String}, a @{link String[]} or a {@code Collection<String>} where each member of the array or collection is a property name + value with the above formats. |
+| batch |	boolean	| false	| auto | The listener method signature should receive a {@code List<?>}; refer to the reference documentation. This allows a single container factory to be used for both record and batch listeners; previously separate container factories were required. @return "true" for the annotated method to be a batch listener or "false" for a record listener. If not set, the container factory setting is used. SpEL and property placeholders are not supported because the listener type cannot be variable. |
+| filter |	object |	false |	null |  Set an {@link RecordFilterStrategy} bean name to override the strategy configured on the container factory. If a SpEL expression is provided ({@code #{...}}), the expression can either evaluate to a {@link RecordFilterStrategy} instance or a bean name. |
+
 #### @EnableStreamListener
 
 Enable stream-listener-starter on spring boot context
