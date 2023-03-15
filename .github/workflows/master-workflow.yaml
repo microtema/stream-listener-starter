@@ -2,20 +2,20 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # Files under .github/workflows folder are generated and should not be edited. #
 ################################################################################
-name: 'Execution Lock Spring Boot Stater Library'
+name: 'Stream Listener Spring Boot Stater Library'
 on:
   push:
     branches:
       - master
 env:
-  APP_NAME: "execution-lock-starter"
-  APP_DISPLAY_NAME: "Execution Lock Spring Boot Stater Library"
+  APP_NAME: "stream-listener-starter"
+  APP_DISPLAY_NAME: "Stream Listener Spring Boot Stater Library"
   GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-  JAVA_VERSION: "1.8"
+  JAVA_VERSION: "17"
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true\
     \ -DdeployAtEnd=true"
   CODE_PATHS: "*"
-  VERSION: "2.0.0"
+  VERSION: "3.0.2"
 jobs:
   initialize:
     name: Initialize
@@ -196,7 +196,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.tag_version.outputs.new_tag }}
-          name: 'Execution Lock Spring Boot Stater Library Release ${{ steps.tag_version.outputs.new_tag }}'
+          name: 'Stream Listener Spring Boot Stater Library Release ${{ steps.tag_version.outputs.new_tag }}'
           body: ${{ steps.tag_version.outputs.changelog }}
   publish:
     name: Publish

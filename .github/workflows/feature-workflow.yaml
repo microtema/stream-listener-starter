@@ -2,20 +2,20 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # Files under .github/workflows folder are generated and should not be edited. #
 ################################################################################
-name: 'Execution Lock Spring Boot Stater Library'
+name: 'Stream Listener Spring Boot Stater Library'
 on:
   push:
     branches:
       - feature/**
 env:
-  APP_NAME: "execution-lock-starter"
-  APP_DISPLAY_NAME: "Execution Lock Spring Boot Stater Library"
+  APP_NAME: "stream-listener-starter"
+  APP_DISPLAY_NAME: "Stream Listener Spring Boot Stater Library"
   GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-  JAVA_VERSION: "1.8"
+  JAVA_VERSION: "17"
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true\
     \ -DdeployAtEnd=true"
   CODE_PATHS: "*"
-  VERSION: "2.0.0"
+  VERSION: "3.0.2"
 jobs:
   initialize:
     name: Initialize
