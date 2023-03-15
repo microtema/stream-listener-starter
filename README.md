@@ -2,11 +2,19 @@
 
 ## 1 - Introduction and Goals
 
-* Event subscribers should handle a large of numbers of events by pulling the self. 
-* The all logic and configuration should be provided via plugin.
+One best practice to decouple components is to use a stream and build an event based architecture (service choreography).
+In such a service choreography the only communication path that exists is the connection of each service to the stream.
+Each service then published events on the stream and don’t cares what happen with these records.
+Other services subscribe to the stream and decide by their own how to react on a certain record.
+
+Producer and Consumer as coupled services
+The Event Consumer subscribe for specific topic and get notified on new record(s) using the "stream-listenr-plugin".
+Once record(s) are received it will react on a certain record and it will mark it
+as success or error regarding to the exception handling on event-consumer.
 
 ### Requirements Overview
 
+* Event subscribers should handle a large of numbers of events by pulling the self.
 * The all logic and configuration should be provided via plugin.
 * Should handle a record consumer.
 * Should handle a batch consumer.
@@ -59,20 +67,29 @@
 
 ![Context and scope](Resources/scope_context.png)
 
-Producer and Consumer as decoupled services
-The Event Producer subscribe for specific topic and get notified on new record(s) using the "stream-listenr-plugin".
-Once record(s) are received it will send to the consumer configured on this topic via REST, and it will mark record(s)
-as success or error regarding to the response from event-consumer.
+### Source Data Lakes
 
-One best practice to decouple components is to use a stream and build an event based architecture (service choreography).
-In such a service choreography the only communication path that exists is the connection of each service to the stream.
-Each service then published events on the stream and don’t cares what happen with these records.
-Other services subscribe to the stream and decide by their own how to react on a certain record.
+provides a scalable and secure platform that allows enterprises to: ingest any data from any system at any speed—even if the data comes from on-premises, cloud, or edge-computing systems; store any type or volume of data in full fidelity; process data in real time or batch mode; and analyze data using SQL, Python, R, or any other language, third-party data, or analytics application.
 
-Producer and Consumer as coupled services
-The Event Producer/Consumer subscribe for specific topic and get notified on new record(s) using the "stream-listenr-plugin".
-Once record(s) are received it will react on a certain record and it will mark it
-as success or error regarding to the exception handling on event-consumer.
+### Application Layer
+
+Any Spring boot application that include the stream-listener-starter as spring boot starter library
+
+#### Consumer/Subscriber
+
+is any stereo spring boot component that annotate any method with @StreamListener annotation
+
+#### Stream Listener Plugin
+
+is a third party spring boot starter library, this will receive records from data-provider by given specific endpoint
+
+#### Data Provider
+
+is an interface that must be implemented by application using a Batch Rest API or different data lakes endpoints.
+
+### Target Data Lakes
+
+same as source data lakes may contains more or less platforms/systems
 
 ### Business context
 
