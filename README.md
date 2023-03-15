@@ -15,9 +15,45 @@
 
 ## 2 - Architecture Constraints
 
+### Branching Model
+
+* Git Flow
+
+### Build Tool
+
+* Maven
+
+### Test Coverage (Line)
+
+* 85 %
+
+### Frameworks & Tools
 * Java 17
 * Spring boot 3.0
 * Maven 3
+
+### DoD
+
+* Package by Feature
+* No TODO's or FIXME are present in code
+* No Dead, commented or unused code are present
+* No warnings are present
+* Use standard Code Formatter from IDEA
+* Follow Java Style Guide
+* Use english for Programing language
+* Use english for documentation
+
+### Guidelines
+
+* `https://google.github.io/styleguide/javaguide.html`
+* Follow SOLID Patterns
+* S - Single-responsibility Principle
+* O - Open-closed Principle
+* L - Liskov Substitution Principle
+* I - Interface Segregation Principle
+* D - Dependency Inversion Principle
+* Follow KISS Patterns
+* Follow DRY Patterns
 
 ## 3 - Context and scope
 
