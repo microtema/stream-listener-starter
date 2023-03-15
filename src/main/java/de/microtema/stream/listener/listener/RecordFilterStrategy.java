@@ -4,6 +4,10 @@ import de.microtema.stream.listener.model.EventIdAware;
 
 import java.util.List;
 
+/**
+ *
+ * @param <T>
+ */
 @FunctionalInterface
 public interface RecordFilterStrategy<T extends EventIdAware> {
 

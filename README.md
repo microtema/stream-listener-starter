@@ -2,7 +2,8 @@
 
 ## 1 - Introduction and Goals
 
-* Event consumer should handle a large of numbers of events by pull the self. The all logic and configuration should be provided via plugin.
+* Event subscribers should handle a large of numbers of events by pulling the self. 
+* The all logic and configuration should be provided via plugin.
 
 ### Requirements Overview
 
@@ -10,20 +11,20 @@
 * Should handle a record consumer.
 * Should handle a batch consumer.
 * The pull and commit should be part of plugin.
-* Usage of plugin should match nearly to Kafka Listener logic, since we want to migrate to kafka ASAP.
+* Usage of plugin should match nearly to Kafka Listener logic, so that the migration to kafka can be seamless.
 
 ## 2 - Architecture Constraints
 
-Inherited from bootstrap
+* Java 17
+* Spring boot 3.0
+* Maven 3
 
 ## 3 - Context and scope
 
 Producer and Consumer as decoupled services
 The Event Producer subscribe for specific topic and get notified on new record(s) using the "stream-listenr-plugin".
 Once record(s) are received it will send to the consumer configured on this topic via REST, and it will mark record(s)
-as success or error regarding to the http status from event-consumer.
-
-![Context and scope](Resources/context-scope.png)
+as success or error regarding to the response from event-consumer.
 
 One best practice to decouple components is to use a stream and build an event based architecture (service choreography).
 In such a service choreography the only communication path that exists is the connection of each service to the stream.
@@ -35,32 +36,68 @@ The Event Producer/Consumer subscribe for specific topic and get notified on new
 Once record(s) are received it will react on a certain record and it will mark it
 as success or error regarding to the exception handling on event-consumer.
 
-![Context and scope](Resources/context-scope-v2.png)
-
-The Monolithic architecture were every function and action of the application is tied to a single and usually very large codebase.
-
 ### Business context
 
-This library should be used in other implementation and speed up the development.
+This library may be used in other implementation and speed up the development.
 
 ### Technical context
 
-Event HUB Batch Service (Stateless)  [PULL]
-Consumers pull events in batch modus from REST Service
+Consumers pull events in batch modus via plugin from different endpoints.
 
-Rest Service may get data from database (current) or from Message broker (later)
+Endpoint may be Rest Service, Database Repositories, Filesystem or Subscribers from message broker
 
-Consumer need to configure the Event-Category, Name, Version, etc.
+Consumer need to configure the topics, group, id, etc.
 
 ## 4 - Solution Strategy
 
-....
+### BeanPostProcessor
+we'll define the BeanPostProcessor which will check each bean for the Subscriber annotation. This class is also a DestructionAwareBeanPostProcessor, which is a Spring interface adding a before-destruction callback to BeanPostProcessor. If the annotation is present, we'll register it with the Endpoint identified by the annotation's SpEL expression on bean initialization and unregister it on bean destruction:
 
 ## 5 - Building Block View
 
-### Level 1
-
 ![Building Block View Level 1](Resources/building-block-level-1.png)
+
+#### @StreamListener
+
+* Annotation that marks a method to be registered as listener. Exactly one of the topic attribute must be specified.
+* The annotated method must expect arguments of typo single record or collection of records.
+* It will typically have a void return type; if not, the returned value will be ignored when called through the factory.
+
+#### @EnableStreamListener
+
+Enable stream-listener-starter on spring boot context
+
+```
+@EnableStreamListener
+@SpringBootApplication
+public class Application {
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+```
+
+#### StreamListenerPostProcessor
+
+Define the BeanPostProcessor which will check each bean for the Subscriber annotation. This class is also a DestructionAwareBeanPostProcessor, which is a Spring interface adding a before-destruction callback to BeanPostProcessor. If the annotation is present, we'll register it identified by the annotation's SpEL expression on bean initialization and unregister it on bean destruction:
+
+#### RecordFilterStrategy
+
+Filter an entire batch of records; to filter all records, return an empty list never null
+
+#### StreamEventListenerErrorHandler
+
+An error handler which is called when a {@code @StreamListener} method
+throws an exception. This is invoked higher up the stack than the
+listener container's error handler. The error handler can return a result.
+
+#### StreamListenerDataProvider
+
+Stream Listener Data Provider provide receive and commit implementation and should be implemented by subscriber
+
+* Receive records by specific endpoint
+* Commit received records within specific endpoint
 
 ## 6 - Runtime View
 
@@ -68,44 +105,45 @@ Consumer need to configure the Event-Category, Name, Version, etc.
 
 ## 7 - Deployment view
 
-Inherited from bootstrap
+Since this is a java library, this will be deployed into central maven repository via ci/cd pipelines
 
 ## 8 - Crosscutting Concepts
 
-Inherited from bootstrap
+* Externalize all properties within spring boot configuration properties
+* Follow nearly Kafka Listener concept
 
 ## 9 - Architecture Decisions
 
-Inherited from bootstrap
+* Few dependencies, so the binary stays as small as possible
+* Low code complexity, so that it easy to grasp the cody
+* High Test Coverage, so the issues are low as possible
 
 ## 10 - Quality Requirements
 
 > This section contains all quality requirements as quality tree with scenarios. The most important ones have already been described in section 1.2. (quality goals)
 > Here you can also capture quality requirements with lesser priority, which will not create high risks when they are not fully achieved.
 
-### Quality Tree
-
-![Quality Tree](Resources/quality-tree.png)
-
 ### Quality Scenarios
 
 | Test Scenario | Description | Status | Link
 | ------------ | ----------- | ------ | ------ 
-| Pull Event for given Consumer-ID | It call REST API endpoint by given worker-id and get only event specified for given customer-id | Done |[Link to Document](https://confluence.microtema.net/display/DX/Test+Customer-InternetAccount)
-| Commit results for given customer-id | It call REST API endpoint by given worker-id and release (locked) event specified for given customer-id | Done |[Link to Document](https://confluence.microtema.net/display/DX/Test+Customer-InternetAccount)
+| Pull Event for given topic | It call REST API endpoint by given topic and get only event specified for given endpoint-id | Done |[Link to Document](https://confluence.microtema.net/display/DX/Test+Invoice-Event)
+| Commit results for given topic and endpoint-id | It call REST API endpoint by given endpoint-id and release (locked) event specified for given endpoint-id | Done |[Link to Document](https://confluence.microtema.net/display/DX/Test+Invoice-Event)
 
 ## 11 - Risks and Technical Debt
 
-Inherited from bootstrap
+* Due to the Few code maintainer the code needs to be tested within high load and long duration
+* Graceful shutdown need to be observed for erroneously behaviors
 
 ## 12 - Glossary
 
 | Term | Description | 
 | ---- | ----------- | 
-| Event-Streaming | ? |
+| Event-Streaming | Streaming data is processed in real-time as it's delivered to a system, although the type of data or the nature of events typically will affect any resulting action |
 | ? | ? |
 
 Feedback and pull-requests welcome!
+microtema [at] web [.] de
 
 ## Technology Stack
 
