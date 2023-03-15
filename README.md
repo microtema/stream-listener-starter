@@ -21,6 +21,8 @@
 
 ## 3 - Context and scope
 
+![Context and scope](Resources/scope_context.png)
+
 Producer and Consumer as decoupled services
 The Event Producer subscribe for specific topic and get notified on new record(s) using the "stream-listenr-plugin".
 Once record(s) are received it will send to the consumer configured on this topic via REST, and it will mark record(s)
