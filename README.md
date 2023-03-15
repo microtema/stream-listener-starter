@@ -14,10 +14,12 @@ as success or error regarding to the exception handling on event-consumer.
 
 ### Requirements Overview
 
-* Event subscribers should handle a large of numbers of events by pulling the self.
-* The all logic and configuration should be provided via plugin.
+* Event subscribers should handle a large numbers of events by pulling the self in batch mode.
+* The all logic and configuration should be provided via event-stream plugin.
 * Should handle a record consumer.
 * Should handle a batch consumer.
+* Should filter records before consuming.
+* Should handle exception during consumer execution.
 * The pull and commit should be part of plugin.
 * Usage of plugin should match nearly to Kafka Listener logic, so that the migration to kafka can be seamless.
 
