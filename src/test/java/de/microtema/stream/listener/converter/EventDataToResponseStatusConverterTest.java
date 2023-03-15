@@ -45,6 +45,19 @@ class EventDataToResponseStatusConverterTest {
     @Test
     void convert() {
 
+        var answer = sut.convert(record);
+
+        assertNotNull(answer);
+
+        assertEquals(record.getId(), answer.getId());
+        assertNull(answer.getErrorMessage());
+        Assertions.assertEquals(ResponseState.OK, answer.getState());
+        assertTrue(answer.isSuccess());
+    }
+
+    @Test
+    void convert_with_meta() {
+
         var answer = sut.convert(record, errorMessage);
 
         assertNotNull(answer);

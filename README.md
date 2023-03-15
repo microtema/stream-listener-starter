@@ -218,7 +218,7 @@ Since this is a java library, this will be deployed into central maven repositor
 
 ## 11 - Risks and Technical Debt
 
-* Due to the Few code maintainer the code needs to be tested within high load and long duration
+* Due to the few code maintainers the code needs to be tested within high load and long duration in multiple use cases
 * Graceful shutdown need to be observed for erroneously behaviors
 
 ## 12 - Glossary

@@ -87,7 +87,7 @@ public class StreamListenerPostProcessor implements DestructionAwareBeanPostProc
         return bean;
     }
 
-    private <T extends EventIdAware> StreamListenerEndpoint<T> createStreamListenerEndpoint(Method method, Object bean, String beanName, StreamListener streamListener) {
+    protected  <T extends EventIdAware> StreamListenerEndpoint<T> createStreamListenerEndpoint(Method method, Object bean, String beanName, StreamListener streamListener) {
 
         var endpoint = new StreamListenerEndpoint<T>();
 
