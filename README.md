@@ -225,7 +225,7 @@ Since this is a java library, this will be deployed into central maven repositor
 ## 9 - Architecture Decisions
 
 * Few dependencies, so the binary stays as small as possible
-* Low code complexity, so that it easy to grasp the cody
+* Low code complexity, so that it easy to grasp the code
 * High Test Coverage, so the issues are low as possible
 
 ## 10 - Quality Requirements
